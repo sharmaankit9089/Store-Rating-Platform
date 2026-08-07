@@ -42,3 +42,23 @@ export const updateRating = async (userId, storeId, rating) => {
     data: { rating },
   });
 };
+
+export const findRatingsByStore = async ({ storeId, skip, take, orderBy }) => {
+  return await prisma.rating.findMany({
+    where: { storeId },
+    skip,
+    take,
+    orderBy,
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+  });
+};
+
+export const countRatingsByStore = async (storeId) => {
+  return await prisma.rating.count({
+    where: { storeId },
+  });
+};

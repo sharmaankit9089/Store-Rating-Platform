@@ -47,3 +47,9 @@ export const deleteStore = async (id) => {
     where: { id },
   });
 };
+
+export const findStoreByOwnerId = async (ownerId) => {
+  return await prisma.store.findUnique({
+    where: { ownerId },
+  });
+};
