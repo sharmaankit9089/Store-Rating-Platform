@@ -15,7 +15,7 @@ import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 // --- Validations ---
 const createUserSchema = z.object({
-  name: z.string().min(20, "Name must be at least 20 characters").max(60, "Name cannot exceed 60 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters").max(60, "Name cannot exceed 60 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().regex(/^(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,16}$/, "Password must be 8-16 chars, contain 1 uppercase and 1 special char"),
   address: z.string().max(400, "Address cannot exceed 400 characters").optional(),
@@ -68,7 +68,7 @@ const AdminUsers = () => {
     queryFn: async () => {
       if (!selectedUserId) return null;
       const response = await api.get(`/admin/users/${selectedUserId}`);
-      return response.data.data;
+      return response.data.data.user;
     },
     enabled: !!selectedUserId,
   });

@@ -13,7 +13,6 @@ const Sidebar = () => {
 
   const ownerLinks = [
     { to: "/owner", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/owner/ratings", icon: Star, label: "Store Ratings" },
   ];
 
   const userLinks = [

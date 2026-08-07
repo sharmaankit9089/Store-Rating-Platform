@@ -9,6 +9,8 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 import AdminDashboard from "../pages/admin/Dashboard";
+import AdminUsers from "../pages/admin/Users";
+import AdminStores from "../pages/admin/Stores";
 import UserDashboard from "../pages/user/Dashboard";
 import OwnerDashboard from "../pages/owner/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
@@ -34,6 +36,8 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/stores" element={<AdminStores />} />
         </Route>
       </Route>
 

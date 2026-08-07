@@ -6,7 +6,7 @@ import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Loader from "../../components/ui/Loader";
 import RatingStars from "../../components/ui/RatingStars";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Star, Store } from "lucide-react";
 import toast from "react-hot-toast";
 
 const UserDashboard = () => {
