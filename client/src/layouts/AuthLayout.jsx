@@ -1,18 +1,20 @@
 import { Outlet } from "react-router-dom";
-import { Store } from "lucide-react";
 
 const AuthLayout = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden p-8 border border-gray-100">
-        <div className="flex flex-col items-center justify-center mb-8">
-          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Store className="w-6 h-6 text-primary-dark" />
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-2xl font-bold text-white shadow-lg">
+            S
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">StoreRating</h1>
-          <p className="text-sm text-gray-500 mt-1">Platform for trusted reviews</p>
+          <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+          <p className="mt-2 text-slate-600">Please sign in to your account</p>
         </div>
-        <Outlet />
+        
+        <div className="rounded-2xl bg-white p-8 shadow-xl border border-slate-100">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
