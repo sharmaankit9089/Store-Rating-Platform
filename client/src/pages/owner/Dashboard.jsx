@@ -5,10 +5,30 @@ import { Card, CardContent } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Loader from "../../components/ui/Loader";
 import RatingStars from "../../components/ui/RatingStars";
-import { Star, MessageSquare } from "lucide-react";
+import { Star, MessageSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+const SortHeader = ({ label, field, currentSortBy, currentSortOrder, onSort }) => {
+  return (
+    <th 
+      className="px-6 py-3 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {currentSortBy === field ? (
+          currentSortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+        ) : (
+          <ArrowUpDown className="h-4 w-4 text-slate-300" />
+        )}
+      </div>
+    </th>
+  );
+};
 
 const OwnerDashboard = () => {
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   
   const { data: dashboard, isLoading: isLoadingDashboard } = useQuery({
     queryKey: ["ownerDashboard"],
@@ -19,12 +39,21 @@ const OwnerDashboard = () => {
   });
 
   const { data: ratings, isLoading: isLoadingRatings } = useQuery({
-    queryKey: ["ownerRatings", page],
+    queryKey: ["ownerRatings", page, sortBy, sortOrder],
     queryFn: async () => {
-      const response = await api.get(`/owner/ratings?page=${page}&limit=10`);
+      const response = await api.get(`/owner/ratings?page=${page}&limit=10&sortBy=${sortBy}&sortOrder=${sortOrder}`);
       return response.data.data;
     },
   });
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+  };
 
   if (isLoadingDashboard) return <Loader fullScreen />;
 
@@ -80,8 +109,8 @@ const OwnerDashboard = () => {
               <thead className="bg-slate-50 text-slate-800">
                 <tr>
                   <th className="px-6 py-3 font-medium">User Name</th>
-                  <th className="px-6 py-3 font-medium">Rating</th>
-                  <th className="px-6 py-3 font-medium">Date</th>
+                  <SortHeader label="Rating" field="rating" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortHeader label="Date" field="createdAt" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

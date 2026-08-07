@@ -1,29 +1,110 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import api from "../../api/axios";
 import { Card } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Loader from "../../components/ui/Loader";
-import { Search } from "lucide-react";
+import Modal from "../../components/ui/Modal";
+import toast from "react-hot-toast";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+// --- Validations ---
+const createStoreSchema = z.object({
+  name: z.string().min(1, "Store name is required"),
+  email: z.string().email("Invalid email address"),
+  address: z.string().min(1, "Store address is required"),
+  ownerId: z.string().min(1, "Owner is required").transform(Number),
+});
+
+const SortHeader = ({ label, field, currentSortBy, currentSortOrder, onSort }) => {
+  return (
+    <th 
+      className="px-6 py-3 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {currentSortBy === field ? (
+          currentSortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+        ) : (
+          <ArrowUpDown className="h-4 w-4 text-slate-300" />
+        )}
+      </div>
+    </th>
+  );
+};
 
 const AdminStores = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // --- Queries ---
   const { data, isLoading } = useQuery({
-    queryKey: ["adminStores", page, search],
+    queryKey: ["adminStores", page, search, sortBy, sortOrder],
     queryFn: async () => {
-      const response = await api.get(`/admin/stores?page=${page}&limit=10&search=${search}`);
+      const response = await api.get(`/admin/stores?page=${page}&limit=10&search=${search}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
       return response.data.data;
     },
   });
+
+  const { data: ownersData, isLoading: isLoadingOwners } = useQuery({
+    queryKey: ["adminUsers", "OWNER"],
+    queryFn: async () => {
+      // Fetch users specifically with role OWNER to populate the dropdown
+      const response = await api.get(`/admin/users?role=OWNER&limit=100`);
+      return response.data.data.items;
+    },
+    enabled: isCreateModalOpen, // Only fetch when modal opens
+  });
+
+  // --- Mutations ---
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      return await api.post("/admin/stores", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["adminStores"]);
+      toast.success("Store created successfully!");
+      setIsCreateModalOpen(false);
+      reset();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create store");
+    }
+  });
+
+  // --- Form ---
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(createStoreSchema),
+  });
+
+  const onSubmit = (data) => {
+    createMutation.mutate(data);
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Store Management</h1>
-        <Button>Add New Store</Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>Add New Store</Button>
       </div>
 
       <Card>
@@ -34,7 +115,10 @@ const AdminStores = () => {
               placeholder="Search by name or address..." 
               className="pl-10"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
         </div>
@@ -46,11 +130,11 @@ const AdminStores = () => {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-800">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Store Name</th>
-                  <th className="px-6 py-3 font-medium">Email</th>
+                  <SortHeader label="Store Name" field="name" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortHeader label="Email" field="email" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                   <th className="px-6 py-3 font-medium">Owner</th>
-                  <th className="px-6 py-3 font-medium">Address</th>
-                  <th className="px-6 py-3 font-medium">Avg Rating</th>
+                  <SortHeader label="Address" field="address" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
+                  <SortHeader label="Avg Rating" field="averageRating" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -102,6 +186,35 @@ const AdminStores = () => {
           </div>
         )}
       </Card>
+
+      {/* Create Store Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={() => { setIsCreateModalOpen(false); reset(); }} title="Add New Store">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input label="Store Name" {...register("name")} error={errors.name?.message} />
+          <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
+          <Input label="Address" {...register("address")} error={errors.address?.message} />
+          <div className="flex flex-col space-y-1">
+            <label className="text-sm font-medium text-slate-700">Assign Owner</label>
+            <select
+              className={`rounded-lg border px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.ownerId ? 'border-red-500' : 'border-slate-300'}`}
+              {...register("ownerId")}
+            >
+              <option value="">Select an owner...</option>
+              {isLoadingOwners ? (
+                <option value="" disabled>Loading owners...</option>
+              ) : (
+                ownersData?.map(owner => (
+                  <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
+                ))
+              )}
+            </select>
+            {errors.ownerId && <span className="text-xs text-red-500">{errors.ownerId.message}</span>}
+          </div>
+          <Button type="submit" className="w-full mt-4" isLoading={createMutation.isPending}>
+            Create Store
+          </Button>
+        </form>
+      </Modal>
     </div>
   );
 };
